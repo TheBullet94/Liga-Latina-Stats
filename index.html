@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Liga Latina Stats</title>
+
+<style>
+body {
+  font-family: Arial;
+  background: #0b1c2c;
+  color: white;
+  text-align: center;
+}
+
+input, button {
+  padding: 8px;
+  margin: 4px;
+  border-radius: 6px;
+  border: none;
+}
+
+button {
+  background: #00d4ff;
+  font-weight: bold;
+}
+
+table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+  background: white;
+  color: black;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 6px;
+}
+
+th {
+  background: #00d4ff;
+}
+
+.delete {
+  background: red;
+  color: white;
+}
+</style>
+</head>
+
+<body>
+
+<h1>⚾ Liga Latina Stats</h1>
+
+<input id="player" placeholder="Jugador">
+
+<h3>Bateo</h3>
+<button onclick="add('ab')">AB</button>
+<button onclick="add('hit')">H</button>
+<button onclick="add('single')">1B</button>
+<button onclick="add('double')">2B</button>
+<button onclick="add('triple')">3B</button>
+<button onclick="add('hr')">HR</button>
+<button onclick="add('bb')">BB</button>
+<button onclick="add('so')">SO</button>
+<button onclick="add('hbp')">HBP</button>
+<button onclick="add('sf')">SF</button>
+
+<h3>Picheo</h3>
+<button onclick="add('ip')">IP</button>
+<button onclick="add('ph')">H</button>
+<button onclick="add('per')">ER</button>
+<button onclick="add('pbb')">BB</button>
+<button onclick="add('pso')">SO</button>
+
+<table>
+<thead>
+<tr>
+<th>Jugador</th>
+<th>AVG</th>
+<th>OBP</th>
+<th>SLG</th>
+<th>OPS</th>
+<th>ERA</th>
+<th>WHIP</th>
+<th>❌</th>
+</tr>
+</thead>
+<tbody id="table"></tbody>
+</table>
+
+<script>
+let stats = JSON.parse(localStorage.getItem("stats")) || {};
+
+function save() {
+  localStorage.setItem("stats", JSON.stringify(stats));
+}
+
+function add(type) {
+  let p = document.getElementById("player").value.trim();
+  if (!p) return alert("Escribe nombre");
+
+  if (!stats[p]) {
+    stats[p] = {
+      ab:0, hit:0, single:0, double:0, triple:0, hr:0,
+      bb:0, so:0, hbp:0, sf:0,
+      ip:0, ph:0, per:0, pbb:0, pso:0
+    };
+  }
+
+  stats[p][type]++;
+  save();
+  render();
+}
+
+function avg(p){
+  let s = stats[p];
+  return s.ab ? (s.hit/s.ab).toFixed(3) : "0.000";
+}
+
+function obp(p){
+  let s = stats[p];
+  let v = (s.hit+s.bb+s.hbp)/(s.ab+s.bb+s.hbp+s.sf);
+  return isNaN(v)? "0.000": v.toFixed(3);
+}
+
+function slg(p){
+  let s = stats[p];
+  let tb = s.single + s.double*2 + s.triple*3 + s.hr*4;
+  let v = tb/s.ab;
+  return isNaN(v)? "0.000": v.toFixed(3);
+}
+
+function ops(p){
+  return (parseFloat(obp(p)) + parseFloat(slg(p))).toFixed(3);
+}
+
+function era(p){
+  let s = stats[p];
+  let v = (s.per*9)/s.ip;
+  return isNaN(v)? "0.00": v.toFixed(2);
+}
+
+function whip(p){
+  let s = stats[p];
+  let v = (s.pbb+s.ph)/s.ip;
+  return isNaN(v)? "0.00": v.toFixed(2);
+}
+
+function del(p){
+  if(confirm("Eliminar?")){
+    delete stats[p];
+    save();
+    render();
+  }
+}
+
+function render(){
+  let t = document.getElementById("table");
+  t.innerHTML = "";
+
+  for(let p in stats){
+    t.innerHTML += `
+    <tr>
+      <td>${p}</td>
+      <td>${avg(p)}</td>
+      <td>${obp(p)}</td>
+      <td>${slg(p)}</td>
+      <td>${ops(p)}</td>
+      <td>${era(p)}</td>
+      <td>${whip(p)}</td>
+      <td><button class="delete" onclick="del('${p}')">X</button></td>
+    </tr>`;
+  }
+}
+
+render();
+</script>
+
+</body>
+</html>
